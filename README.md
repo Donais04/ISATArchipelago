@@ -15,4 +15,4 @@
   - susChecks makes it so anywhere you'd gain a sus point is a location check.
     - This is not the same as everywhere that the sus animation plays
 
--Take all the files in the ISATMod folder and place them into your ISAT's WWW folder, replacing them.
+- Take all the files in the ISATMod folder and place them into your ISAT's WWW folder, replacing them.

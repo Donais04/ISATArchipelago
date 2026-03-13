@@ -71,6 +71,7 @@ const itemListVarID = 421; //incoming item names are pushed to this vairable to 
 const sendListVarID = 435; //outgoing item names are pushed to this vairable to display in game
 const runItemGetSwitchID = 352; //if this switch is flipped, autorun event itemGetEventID.
 const runItemSendSwitchID = 353; //same
+const deathlinkEventID = 324;
 
 switchName = { //if you want a check to flip a switch, put it in here
 	362: "OpenPhrase123",
@@ -152,9 +153,9 @@ Rando.openApClient = function(){
 		}
 	});
 	
-	//Rando.client.deathEvents.on("deathReceived", (items, index) => {
-	//	Rando.deathlink();
-	//});
+	Rando.client.deathEvents.on("deathReceived", (items, index) => {
+		Rando.deathlink();
+	});
 	
 	
 	Rando.client.items.on("hintsInitialized", (items, index) => {
@@ -304,8 +305,6 @@ Rando.checkForItems = function(){
 			} */
 }
 
-
-
 Rando.itemDoubleCheck = function(){ //This is ran for when an item error is detected I think
 	client.items.received.forEach((item) => {
 		var playerId = item.receiver;
@@ -355,7 +354,12 @@ gain = function(item) {//Run this as a script in game with the location name as 
 				break;
 			}
 		}
-		console.log("sent location " + item + " with ID " + get);
+		if (!(get == -1)) {
+			console.log("sent location " + item + " with ID " + get);
+		} else {
+			console.log("location invalid "+item+", not sending");
+			return;
+		}
 		//Sawer notes here
 		//Ask the client to send the item in question; If it's a Silver Daze item, the client will send it to us.
 		//We can do this by storing all of the items that are received by the player in an array, then checking every couple frames if that item has been sent/received.
@@ -412,6 +416,7 @@ gain = function(item) {//Run this as a script in game with the location name as 
 				$gameTemp.reserveCommonEvent(itemGetEventID);
 			}
 }
+
 Rando.initializeLocationScout = function(){ //locationScout is basically a way to get all info from any check.
 	$gamePlayer.locationScout = $gamePlayer.locationScout || []
 	$gamePlayer.locationsRaw.forEach((item) => {
@@ -453,16 +458,28 @@ Rando.initializeLocationScout = function(){ //locationScout is basically a way t
 	Object.freeze($gamePlayer.locationScout);
 };
 
+Rando.deathlink = function() {
+	if ($gamePlayer.slotData["DeathLink"]){
+		$gameTemp.reserveCommonEvent(deathlinkEventID);
+	}
+};
+
+sendDeath = function() {
+	if ($gamePlayer.slotData["DeathLink"]){
+		Rando.client.sendDeathLink();
+	}
+};
+
 //stuff for my own game.
 Rando.spoilRandomCheck = function() {//this is for getting a random useful item and spoiling it
 	var ret = -1;
 	for (var i = 1; i < 10000; i++) {
 		if ($gamePlayer.locationScout[i] && $gamePlayer.locationScout[i]['useful']){
-			ret = $gamePlayer.locationScout[i]
+			ret = $gamePlayer.locationScout[i];
 		}
 	}
-	return [temp['name'],temp['locationName'],temp['sender']]
-}
+	return [temp['name'],temp['locationName'],temp['sender']];
+};
 
 foundLocations = []
 
@@ -473,7 +490,7 @@ Rando.hasBeenFound = function(name) { //this is self explanitory. You don't need
 		}
 	}
 	return false;
-}
+};
 
 randomItemGet = function() {//gives random thing from list
 	var temp = Math.random()
@@ -507,11 +524,30 @@ randomItemGet = function() {//gives random thing from list
 }
 
 win = function(winCon) { //at every possible win, run this with the win index. 
-	//TODO make game switches 403 a variable and wincon a string for readability
-	if (!$gameSwitches._data[403]&&winCon==0){
+	if (!$gamePlayer.slotData["SecretBoss"]&&winCon==0){
 		Rando.client.goal()
 	}
-	if ($gameSwitches._data[403]&&winCon==1){
+	if ($gamePlayer.slotData["SecretBoss"]&&winCon==1){
 		Rando.client.goal()
+	}
+}
+
+Rando.initOptions = function(){
+	flipSwitches();
+	doubleEXP();
+}
+doubleEXP = function(){
+	if ($gamePlayer.slotData["ExtraEXP"]) {
+		$gameTemp.reserveCommonEvent(325);
+	}
+}
+
+flipSwitches = function() {
+	if (!$gamePlayer.slotData["PotionChecks"]) {
+		for (const i of switchName) {
+			if (switchName[i].includes("potions")){
+				$gameSwitches.setValue(i,true);
+			}
+		}
 	}
 }
